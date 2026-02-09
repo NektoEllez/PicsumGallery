@@ -24,13 +24,15 @@ final class ToastStore {
     func show(_ message: ToastMessage, autoDismissAfter seconds: Double = 3) {
         dismissTask?.cancel()
         self.message = message
-        dismissTask = Task {
+        dismissTask = Task { @MainActor in
             do {
                 try await Task.sleep(for: .seconds(seconds))
                 if !Task.isCancelled {
                     dismiss()
                 }
-            } catch {}
+            } catch {
+                // Task cancelled
+            }
         }
     }
 

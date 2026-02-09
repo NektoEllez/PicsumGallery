@@ -1,4 +1,4 @@
-# SwiftLint config aligned with Cursor rules (Swift & SwiftUI best practices)
+# SwiftLint config aligned with Swift & SwiftUI best practices
 # https://github.com/realm/SwiftLint
 
 opt_in_rules:
@@ -13,12 +13,12 @@ disabled_rules:
   - trailing_whitespace  # annoying whitespace checks
   - switch_case_alignment  # annoying alignment checks
 
-# Line length: warning 120, error 200 (Cursor: long lines avoided)
+# Line length: warning 120, error 200
 line_length:
   warning: 120
   error: 200
 
-# File length: View max 250, ViewModel max 300 (Cursor rules)
+# File length: View max 250, ViewModel max 300
 file_length:
   warning: 300
   error: 400
@@ -29,7 +29,7 @@ type_body_length:
   warning: 300
   error: 400
 
-# Naming: camelCase properties/methods, PascalCase types (Cursor)
+# Naming: camelCase properties/methods, PascalCase types
 identifier_name:
   min_length: 2
   max_length: 50
@@ -40,7 +40,7 @@ type_name:
   min_length: 2
   max_length: 50
 
-# No force unwrap / force try (Cursor: handle errors properly)
+# No force unwrap / force try
 force_cast: error
 force_try: error
 

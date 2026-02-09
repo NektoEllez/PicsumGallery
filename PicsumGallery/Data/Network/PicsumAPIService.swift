@@ -7,12 +7,7 @@ protocol PicsumAPIServiceProtocol {
 final class PicsumAPIService: PicsumAPIServiceProtocol {
     private let baseURL = "https://picsum.photos/v2/list"
     private let maxResponseSize: Int64 = 10 * 1024 * 1024 // 10 MB
-    private let decoder: JSONDecoder = {
-        let decoder = JSONDecoder()
-        // decoder.keyDecodingStrategy = .convertFromSnakeCase
-        // decoder.dateDecodingStrategy = .iso8601
-        return decoder
-    }()
+    private let decoder = JSONDecoder()
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30.0

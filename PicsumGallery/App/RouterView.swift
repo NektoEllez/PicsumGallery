@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 private enum RouterKey: EnvironmentKey {
     static let defaultValue: Router? = nil
@@ -16,6 +17,9 @@ struct RouterView: View {
     @State private var errorService = ErrorService()
     @State private var toastStore = ToastStore()
     @State private var apiService = PicsumAPIService()
+    @State private var appSettings = AppSettings.shared
+    @State private var photosViewModel: PhotosViewModel?
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         NavigationStack(path: $router.path) {
@@ -24,11 +28,24 @@ struct RouterView: View {
                     destinationView(for: route)
                 }
         }
+        .preferredColorScheme(appSettings.colorScheme)
         .environment(\.router, router)
         .environment(\.toastStore, toastStore)
+        .environment(\.appSettings, appSettings)
         .environment(errorService)
         .toastOverlay(alignment: .top)
-        .onAppear {
+        .task {
+            if photosViewModel == nil {
+                let cacheService = PhotoCacheService(modelContext: modelContext)
+                let viewModel = PhotosViewModel(
+                    apiService: apiService,
+                    errorService: errorService,
+                    cacheService: cacheService,
+                    localizer: appSettings
+                )
+                viewModel.toastStore = toastStore
+                photosViewModel = viewModel
+            }
             errorService.toastStore = toastStore
         }
     }
@@ -37,15 +54,17 @@ struct RouterView: View {
     private func destinationView(for route: Route) -> some View {
         switch route {
         case .photoList:
-            PhotoListView(
-                viewModel: PhotosViewModel(
-                    apiService: apiService,
-                    errorService: errorService
-                )
-            )
+            if let viewModel = photosViewModel {
+                PhotoListView(viewModel: viewModel)
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         case .photoDetail(let photo):
             PhotoDetailView(photo: photo)
                 .environment(\.toastStore, toastStore)
+        case .settings:
+            SettingsView()
         }
     }
 }

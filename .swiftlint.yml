@@ -1,0 +1,69 @@
+# SwiftLint config aligned with Cursor rules (Swift & SwiftUI best practices)
+# https://github.com/realm/SwiftLint
+
+opt_in_rules:
+  - modifier_order
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - private_over_fileprivate
+  - private_swiftui_state
+
+disabled_rules:
+  - todo  # allow TODO comments
+  - trailing_whitespace  # annoying whitespace checks
+  - switch_case_alignment  # annoying alignment checks
+
+# Line length: warning 120, error 200 (Cursor: long lines avoided)
+line_length:
+  warning: 120
+  error: 200
+
+# File length: View max 250, ViewModel max 300 (Cursor rules)
+file_length:
+  warning: 300
+  error: 400
+  ignore_comment_only_lines: true
+
+# Type body length (single type in file)
+type_body_length:
+  warning: 300
+  error: 400
+
+# Naming: camelCase properties/methods, PascalCase types (Cursor)
+identifier_name:
+  min_length: 2
+  max_length: 50
+  allowed_symbols: "_"
+  validates_start_with_lowercase: true
+
+type_name:
+  min_length: 2
+  max_length: 50
+
+# No force unwrap / force try (Cursor: handle errors properly)
+force_cast: error
+force_try: error
+
+# Nesting: avoid deep nesting
+nesting:
+  type_level: 2
+  function_level: 2
+
+# SwiftUI: prefer private for @State etc.
+private_swiftui_state: warning
+
+# Modifier order (SwiftUI: content → layout → style → interaction → lifecycle)
+# SwiftLint modifier_order is for declaration modifiers (override, public, etc.)
+modifier_order:
+  preferred_modifier_order: [override, acl, setterACL, dynamic, mutators, lazy, final, required, convenience, typeMethods, owned]
+
+# Paths to lint (project Swift sources)
+included:
+  - PicsumGallery
+excluded:
+  - PicsumGalleryTests
+  - PicsumGalleryUITests
+  - DerivedData
+  - .build
+
+reporter: "xcode"

@@ -1,0 +1,10 @@
+# SwiftFormat config aligned with Cursor rules (Swift & SwiftUI)
+# https://github.com/nicklockwood/SwiftFormat
+# Run: swiftformat PicsumGallery
+
+--indent 4
+--maxwidth 120
+--linebreaks lf
+--allman false
+--swiftversion 6.0
+--exclude PicsumGalleryTests,PicsumGalleryUITests,DerivedData,.build

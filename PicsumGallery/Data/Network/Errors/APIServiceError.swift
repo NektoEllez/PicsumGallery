@@ -11,7 +11,7 @@ enum APIServiceError: Error, Sendable {
     case networkError(URLError)
     case httpError(statusCode: Int, message: String?)
     case decodingError(DecodingError)
-    case unknown(Error)
+    case unknown(message: String)
 }
 
 extension APIServiceError: LocalizedError {
@@ -40,8 +40,8 @@ extension APIServiceError: LocalizedError {
                     @unknown default:
                         return "Data decoding error"
                 }
-            case .unknown(let error):
-                return "Unknown error: \(error.localizedDescription)"
+            case .unknown(let message):
+                return "Unknown error: \(message)"
         }
     }
     
@@ -87,11 +87,8 @@ extension APIServiceError: LocalizedError {
                     @unknown default:
                         return "Error decoding JSON response"
                 }
-            case .unknown(let error):
-                let errorType = String(describing: type(of: error))
-                let nsError = error as NSError
-                let reason = nsError.localizedFailureReason ?? "Unknown reason"
-                return "Unexpected error of type \(errorType): \(reason)"
+            case .unknown(let message):
+                return "Unexpected error: \(message)"
         }
     }
     
@@ -130,5 +127,20 @@ extension APIServiceError: LocalizedError {
             case .unknown:
                 return "An unexpected error occurred. Try refreshing the data"
         }
+    }
+}
+
+extension APIServiceError {
+    static func from(_ error: Error) -> APIServiceError {
+        if let apiServiceError = error as? APIServiceError {
+            return apiServiceError
+        }
+        if let urlError = error as? URLError {
+            return .networkError(urlError)
+        }
+        if let decodingError = error as? DecodingError {
+            return .decodingError(decodingError)
+        }
+        return .unknown(message: error.localizedDescription)
     }
 }

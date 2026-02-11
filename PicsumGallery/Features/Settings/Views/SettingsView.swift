@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.appSettings) private var settings
+    @Environment(\.toastStore) private var toastStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var initialColorScheme: ColorScheme?
@@ -30,11 +31,14 @@ struct SettingsView: View {
                             dismiss()
                         }
                     }
+                    .accessibilityIdentifier("settings.cancelButton")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(localized(.done)) {
+                        showSavedToastIfNeeded()
                         dismiss()
                     }
+                    .accessibilityIdentifier("settings.doneButton")
                 }
             }
             .onAppear {
@@ -63,11 +67,30 @@ struct SettingsView: View {
         dismiss()
     }
 
+    private func showSavedToastIfNeeded() {
+        let appearanceChanged = settings.colorScheme != initialColorScheme
+        let languageChanged = settings.languageCode != initialLanguageCode
+        guard appearanceChanged || languageChanged else { return }
+
+        let key: LocalizedString
+        if appearanceChanged, languageChanged {
+            key = .settingsSavedAppearanceAndLanguage
+        } else if appearanceChanged {
+            key = .settingsSavedAppearance
+        } else {
+            key = .settingsSavedLanguage
+        }
+        let text = key.localized(for: settings.languageCode)
+        let message = ToastMessage(text: text, icon: "checkmark.circle", style: .success)
+        toastStore?.show(message, autoDismissAfter: 2.5)
+    }
+
     private var settingsContent: some View {
         List {
             appearanceSection
             languageSection
         }
+        .accessibilityIdentifier("settings.screen")
     }
 
     private var appearanceSection: some View {
@@ -98,6 +121,7 @@ struct SettingsView: View {
                 Text(localized(.dark)).tag("dark")
             }
             .pickerStyle(.segmented)
+            .accessibilityIdentifier("settings.appearancePicker")
         } header: {
             Text(localized(.appearance))
         } footer: {
@@ -115,6 +139,7 @@ struct SettingsView: View {
                     Text(language.name).tag(language.code)
                 }
             }
+            .accessibilityIdentifier("settings.languagePicker")
         } header: {
             Text(localized(.language))
         } footer: {

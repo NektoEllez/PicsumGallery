@@ -27,9 +27,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             switch phase {
             case .empty:
                 placeholder()
-                    .task(id: url?.absoluteString) {
-                        await loadImage()
-                    }
             case .success(let image):
                 content(image)
                     .id(url?.absoluteString)
@@ -43,6 +40,15 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             loadTask?.cancel()
             loadTask = nil
         }
+        .task(id: url?.absoluteString) {
+            await reloadForCurrentURL()
+        }
+    }
+
+    @MainActor
+    private func reloadForCurrentURL() async {
+        phase = .empty
+        await loadImage()
     }
     
     @MainActor

@@ -64,15 +64,7 @@ final class ErrorService {
 
     /// Converts any error to APIServiceError.
     private func mapToAPIServiceError(_ error: Error) -> APIServiceError {
-        if let urlError = error as? URLError {
-            return .networkError(urlError)
-        } else if let decodingError = error as? DecodingError {
-            return .decodingError(decodingError)
-        } else if let apiServiceError = error as? APIServiceError {
-            return apiServiceError
-        } else {
-            return .unknown(error)
-        }
+        APIServiceError.from(error)
     }
 
     /// Logs error without saving to currentError.
@@ -131,8 +123,8 @@ final class ErrorService {
             logDecodingError(decodingError)
         case .invalidURL:
             Self.logger.debug("Invalid URL - failed to create URL from string or components")
-        case .unknown(let underlyingError):
-            logUnknownError(underlyingError)
+        case .unknown(let message):
+            logUnknownError(message)
         }
     }
     
@@ -182,14 +174,9 @@ final class ErrorService {
     }
     
     /// Logs unknown error details.
-    private func logUnknownError(_ underlyingError: Error) {
+    private func logUnknownError(_ message: String) {
         #if DEBUG
-        let errorType = String(describing: type(of: underlyingError))
-        Self.logger.debug("Unknown error type: \(errorType, privacy: .public)")
-        Self.logger.debug("Unknown error: \(underlyingError.localizedDescription, privacy: .public)")
-        if let failureReason = (underlyingError as? LocalizedError)?.failureReason {
-            Self.logger.debug("Unknown error failure reason: \(failureReason, privacy: .public)")
-        }
+        Self.logger.debug("Unknown error: \(message, privacy: .public)")
         #endif
     }
     

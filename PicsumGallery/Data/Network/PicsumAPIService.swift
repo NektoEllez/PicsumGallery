@@ -59,7 +59,7 @@ final class PicsumAPIService: PicsumAPIServiceProtocol {
         } catch let apiError as APIServiceError {
             throw apiError
         } catch {
-            throw APIServiceError.unknown(error)
+            throw APIServiceError.from(error)
         }
     }
 }

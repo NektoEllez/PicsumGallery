@@ -23,12 +23,21 @@ final class PicsumGalleryUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testOpenAndCloseSettingsScreen() throws {
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let settingsButton = app.buttons["photos.settingsButton"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        settingsButton.tap()
+
+        let settingsScreen = app.otherElements["settings.screen"]
+        XCTAssertTrue(settingsScreen.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["settings.doneButton"].exists)
+        XCTAssertTrue(app.buttons["settings.cancelButton"].exists)
+
+        app.buttons["settings.cancelButton"].tap()
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
     }
 
     @MainActor

@@ -24,12 +24,16 @@ struct PhotoListView: View {
                     } label: {
                         Image(systemName: "gearshape.fill")
                     }
+                    .accessibilityIdentifier("photos.settingsButton")
                 }
             }
             .task {
                 if viewModel.photos.isEmpty {
                     await viewModel.load()
                 }
+            }
+            .onDisappear {
+                viewModel.cancelPendingWork()
             }
     }
     
@@ -128,6 +132,7 @@ struct PhotoListView: View {
         }
         .disabled(viewModel.isLoadingMore)
         .foregroundStyle(viewModel.isLoadingMore ? .secondary : .primary)
+        .accessibilityIdentifier("photos.loadMoreButton")
     }
     
     private func photoRow(photo: PicsumPhoto) -> some View {

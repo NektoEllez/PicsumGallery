@@ -17,25 +17,13 @@ final class PhotosViewModel {
     private let pageSize = 20
     
     private let throttleInterval: TimeInterval = 0.5
+    /// Throttle for success toast: show at most once per this interval (e.g. pull-to-refresh spam → one toast).
+    private let successToastThrottleInterval: TimeInterval = 4
+    private var lastSuccessToastTime: Date?
     var toastStore: ToastStore?
-    
-    private var loadMoreTask: Task<Void, Never>? {
-        get { _loadMoreTask }
-        set { _loadMoreTask = newValue }
-    }
-    
-    private var successToastTask: Task<Void, Never>? {
-        get { _successToastTask }
-        set { _successToastTask = newValue }
-    }
-    
-    nonisolated(unsafe) private var _loadMoreTask: Task<Void, Never>?
-    nonisolated(unsafe) private var _successToastTask: Task<Void, Never>?
-    
-    nonisolated(unsafe) deinit {
-        _loadMoreTask?.cancel()
-        _successToastTask?.cancel()
-    }
+    private var loadMoreTask: Task<Void, Never>?
+    private var successToastTask: Task<Void, Never>?
+    private var loadGeneration = 0
 
     init(
         apiService: PicsumAPIServiceProtocol,
@@ -50,6 +38,11 @@ final class PhotosViewModel {
     }
 
     func load() async {
+        loadGeneration += 1
+        let generation = loadGeneration
+        loadMoreTask?.cancel()
+        loadMoreTask = nil
+
         isLoading = true
         defer { isLoading = false }
         
@@ -64,27 +57,21 @@ final class PhotosViewModel {
         
         do {
             let fetchedPhotos = try await apiService.fetchPhotos(page: currentPage, limit: pageSize)
-            
-            let oldPhotoIds = Set(photos.map { $0.id.value })
-            let newPhotoIds = Set(fetchedPhotos.map { $0.id.value })
-            
-            if oldPhotoIds != newPhotoIds {
+            guard generation == loadGeneration else { return }
+
+            if photos != fetchedPhotos {
                 photos = fetchedPhotos
             }
             
             cacheService.save(fetchedPhotos)
             hasMore = fetchedPhotos.count >= pageSize
             error = nil
-            
-            if oldPhotoIds != newPhotoIds {
-                showSuccessToast()
-            }
+            showSuccessToast()
         } catch {
+            guard generation == loadGeneration else { return }
             if photos.isEmpty {
                 _ = errorService.handle(error)
-                if let apiError = error as? APIServiceError {
-                    self.error = apiError
-                }
+                self.error = APIServiceError.from(error)
             } else {
                 _ = errorService.handle(error)
             }
@@ -92,13 +79,18 @@ final class PhotosViewModel {
     }
     
     private func showSuccessToast() {
+        let now = Date()
+        if let last = lastSuccessToastTime, now.timeIntervalSince(last) < successToastThrottleInterval {
+            return
+        }
+        lastSuccessToastTime = now
+
         successToastTask?.cancel()
-        
         successToastTask = Task { @MainActor in
             do {
                 try await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled else { return }
-                
+
                 let text = localizer?.string(.photosUpdated) ?? "Photos updated"
                 let message = ToastMessage(
                     text: text,
@@ -113,17 +105,19 @@ final class PhotosViewModel {
     }
     
     func loadMore() {
+        let generation = loadGeneration
         loadMoreTask?.cancel()
         
         loadMoreTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(throttleInterval))
             guard !Task.isCancelled else { return }
             
-            await performLoadMore()
+            await performLoadMore(expectedGeneration: generation)
         }
     }
     
-    private func performLoadMore() async {
+    private func performLoadMore(expectedGeneration: Int) async {
+        guard expectedGeneration == loadGeneration else { return }
         guard !isLoadingMore && hasMore else { return }
         
         isLoadingMore = true
@@ -133,17 +127,26 @@ final class PhotosViewModel {
         
         do {
             let fetchedPhotos = try await apiService.fetchPhotos(page: currentPage, limit: pageSize)
-            
-            photos.append(contentsOf: fetchedPhotos)
+            guard expectedGeneration == loadGeneration else { return }
+
+            let existingIds = Set(photos.map { $0.id.value })
+            let uniqueFetchedPhotos = fetchedPhotos.filter { !existingIds.contains($0.id.value) }
+            photos.append(contentsOf: uniqueFetchedPhotos)
             cacheService.save(fetchedPhotos)
             hasMore = fetchedPhotos.count >= pageSize
             error = nil
         } catch {
+            guard expectedGeneration == loadGeneration else { return }
             _ = errorService.handle(error)
-            if let apiError = error as? APIServiceError {
-                self.error = apiError
-            }
+            self.error = APIServiceError.from(error)
             currentPage -= 1
         }
+    }
+
+    func cancelPendingWork() {
+        loadMoreTask?.cancel()
+        loadMoreTask = nil
+        successToastTask?.cancel()
+        successToastTask = nil
     }
 }

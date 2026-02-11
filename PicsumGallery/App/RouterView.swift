@@ -33,7 +33,7 @@ struct RouterView: View {
         .environment(\.toastStore, toastStore)
         .environment(\.appSettings, appSettings)
         .environment(errorService)
-        .toastOverlay(alignment: .top)
+        .toastOverlay(alignment: .top, store: toastStore)
         .task {
             if photosViewModel == nil {
                 let cacheService = PhotoCacheService(modelContext: modelContext)
@@ -52,20 +52,28 @@ struct RouterView: View {
     
     @ViewBuilder
     private func destinationView(for route: Route) -> some View {
-        switch route {
-        case .photoList:
-            if let viewModel = photosViewModel {
-                PhotoListView(viewModel: viewModel)
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+        sharedEnvironment {
+            switch route {
+            case .photoList:
+                if let viewModel = photosViewModel {
+                    PhotoListView(viewModel: viewModel)
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            case .photoDetail(let photo):
+                PhotoDetailView(photo: photo)
+            case .settings:
+                SettingsView()
             }
-        case .photoDetail(let photo):
-            PhotoDetailView(photo: photo)
-                .environment(\.toastStore, toastStore)
-        case .settings:
-            SettingsView()
         }
+    }
+
+    /// Single composition root: injects shared dependencies into every navigation destination
+    /// so that pushed views (e.g. from navigationDestination) receive the same environment.
+    private func sharedEnvironment<V: View>(@ViewBuilder content: () -> V) -> some View {
+        content()
+            .environment(\.toastStore, toastStore)
     }
 }
 

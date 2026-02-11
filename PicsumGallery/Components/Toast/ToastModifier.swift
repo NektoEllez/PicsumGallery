@@ -2,22 +2,25 @@ import SwiftUI
 
 struct ToastModifier: ViewModifier {
     var alignment: Alignment = .top
+    var store: ToastStore
 
     func body(content: Content) -> some View {
         content
             .overlay(alignment: alignment) {
-                ToastOverlayContent(alignment: alignment)
+                ToastOverlayContent(alignment: alignment, store: store)
             }
     }
 }
 
-/// Dedicated view so SwiftUI observes ToastStore and re-renders when message changes.
+/// Dedicated view that observes ToastStore directly so SwiftUI re-renders when message changes.
+/// Pass the store from the parent (e.g. RouterView) so Observation tracks the same instance;
+/// using only @Environment(\.toastStore) in overlays can fail to update in some navigation scenarios.
 private struct ToastOverlayContent: View {
-    @Environment(\.toastStore) private var toastStore
     var alignment: Alignment
+    var store: ToastStore
 
     var body: some View {
-        if let store = toastStore, let message = store.message {
+        if let message = store.message {
             ToastView(message: message) {
                 store.dismiss()
             }
@@ -33,7 +36,7 @@ private struct ToastOverlayContent: View {
 }
 
 extension View {
-    func toastOverlay(alignment: Alignment = .top) -> some View {
-        modifier(ToastModifier(alignment: alignment))
+    func toastOverlay(alignment: Alignment = .top, store: ToastStore) -> some View {
+        modifier(ToastModifier(alignment: alignment, store: store))
     }
 }

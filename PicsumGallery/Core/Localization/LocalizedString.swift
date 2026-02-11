@@ -33,6 +33,9 @@ enum LocalizedString {
     case landscape
     case portrait
     case square
+    case settingsSavedAppearance
+    case settingsSavedLanguage
+    case settingsSavedAppearanceAndLanguage
 
     func localized(for languageCode: String) -> String {
         let translations: [LocalizedString: [String: String]] = [
@@ -67,7 +70,10 @@ enum LocalizedString {
             .photoPlural: ["en": "photos", "ru": "фото"],
             .landscape: ["en": "Landscape", "ru": "Альбомная"],
             .portrait: ["en": "Portrait", "ru": "Портретная"],
-            .square: ["en": "Square", "ru": "Квадрат"]
+            .square: ["en": "Square", "ru": "Квадрат"],
+            .settingsSavedAppearance: ["en": "Appearance saved", "ru": "Тема сохранена"],
+            .settingsSavedLanguage: ["en": "Language saved", "ru": "Язык сохранён"],
+            .settingsSavedAppearanceAndLanguage: ["en": "Appearance and language saved", "ru": "Тема и язык сохранены"]
         ]
         return translations[self]?[languageCode] ?? translations[self]?["en"] ?? ""
     }

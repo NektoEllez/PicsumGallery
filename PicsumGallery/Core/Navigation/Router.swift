@@ -5,9 +5,7 @@ enum Route: Hashable {
     case photoList
     case photoDetail(PicsumPhoto)
     case settings
-}
-
-@Observable
+}@Observable
 @MainActor
 final class Router {
     var path = NavigationPath()

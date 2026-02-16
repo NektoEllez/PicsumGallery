@@ -45,10 +45,11 @@ struct PhotoDetailView: View {
             loadingView
         }
         .frame(maxWidth: .infinity)
+        .frame(minHeight: 200)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
-    
+
     private var loadingView: some View {
         VStack(spacing: 20) {
             ProgressView()
@@ -171,72 +172,13 @@ struct PhotoDetailView: View {
     }
     
     private var photoMetadata: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionHeader(title: localize(.information))
-            
-            VStack(spacing: 0) {
-                metadataRow(
-                    icon: "person.fill",
-                    title: localize(.author),
-                    value: photo.author
-                )
-                
-                Divider()
-                    .padding(.leading, 48)
-                
-                metadataRow(
-                    icon: "ruler",
-                    title: localize(.dimensions),
-                    value: "\(photo.width) × \(photo.height) px"
-                )
-                
-                Divider()
-                    .padding(.leading, 48)
-                
-                metadataRow(
-                    icon: "aspectratio",
-                    title: localize(.aspectRatio),
-                    value: String(format: "%.2f", Double(photo.width) / Double(photo.height))
-                )
-            }
-            .padding(.vertical, 8)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.secondary.opacity(0.1))
+        PhotoMetadataSection(
+            photo: photo,
+            sectionTitle: localize(.information),
+            authorTitle: localize(.author),
+            dimensionsTitle: localize(.dimensions),
+            aspectRatioTitle: localize(.aspectRatio)
         )
-    }
-    
-    private func sectionHeader(title: String) -> some View {
-        Text(title)
-            .font(.headline)
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
-    }
-    
-    private func metadataRow(icon: String, title: String, value: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .frame(width: 24)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text(value)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-            }
-            
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
 }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// ViewModel for the photo list: loads photos from API with cache-first strategy, pagination, and error handling.
 @Observable
 @MainActor
 final class PhotosViewModel {
@@ -37,6 +38,7 @@ final class PhotosViewModel {
         self.localizer = localizer
     }
 
+    /// Loads the first page, optionally showing cached photos first, then fetches from API and updates state.
     func load() async {
         loadGeneration += 1
         let generation = loadGeneration
@@ -103,7 +105,8 @@ final class PhotosViewModel {
             }
         }
     }
-    
+
+    /// Schedules loading the next page after a short throttle; cancels previous load-more task.
     func loadMore() {
         let generation = loadGeneration
         loadMoreTask?.cancel()
@@ -147,6 +150,7 @@ final class PhotosViewModel {
         }
     }
 
+    /// Cancels any in-flight load-more and success-toast tasks (e.g. when leaving the screen).
     func cancelPendingWork() {
         loadMoreTask?.cancel()
         loadMoreTask = nil

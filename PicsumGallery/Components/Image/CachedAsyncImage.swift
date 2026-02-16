@@ -8,6 +8,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
     @ViewBuilder let placeholder: () -> Placeholder
     
     @State private var phase: AsyncImagePhase = .empty
+    @State private var loadedURL: String?
     @State private var loadTask: Task<Void, Never>?
     
     init(
@@ -47,6 +48,10 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
 
     @MainActor
     private func reloadForCurrentURL() async {
+        let currentURLString = url?.absoluteString
+        if currentURLString == loadedURL, case .success = phase {
+            return
+        }
         phase = .empty
         await loadImage()
     }
@@ -66,6 +71,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 if !Task.isCancelled,
                    let image = await image(from: cachedResponse.data, targetSize: targetSize) {
                     phase = .success(image)
+                    loadedURL = url.absoluteString
                     return
                 }
             }
@@ -85,6 +91,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 if let image = await image(from: data, targetSize: targetSize) {
                     guard !Task.isCancelled else { return }
                     phase = .success(image)
+                    loadedURL = url.absoluteString
                 } else {
                     phase = .failure(URLError(.badServerResponse))
                 }
@@ -107,7 +114,11 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             }
             
             let options: [CFString: Any]
-            if let targetSize = targetSize {
+            let validTargetSize: CGSize? = {
+                guard let s = targetSize, s.width > 0, s.height > 0 else { return nil }
+                return s
+            }()
+            if let targetSize = validTargetSize {
                 let maxDimension = max(targetSize.width, targetSize.height) * 2
                 options = [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,

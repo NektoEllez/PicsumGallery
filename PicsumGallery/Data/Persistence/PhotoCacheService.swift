@@ -4,6 +4,7 @@ import SwiftData
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PicsumGallery", category: "PhotoCache")
 
+/// Protocol for persisting and loading Picsum photos (e.g. SwiftData-backed cache).
 protocol PhotoCacheServiceProtocol {
     func save(_ photos: [PicsumPhoto])
     func load(limit: Int) -> [PicsumPhoto]
@@ -12,6 +13,7 @@ protocol PhotoCacheServiceProtocol {
     func clearAll()
 }
 
+/// SwiftData-backed cache for Picsum photos with TTL; logs errors and keeps recent entries.
 @Observable
 @MainActor
 final class PhotoCacheService: PhotoCacheServiceProtocol {
@@ -21,7 +23,8 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
-    
+
+    /// Upserts photos into the cache (update existing by id, insert new) and triggers cleanup of old entries.
     func save(_ photos: [PicsumPhoto]) {
         for photo in photos {
             let id = photo.id.value
@@ -56,7 +59,8 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
             await clearOld()
         }
     }
-    
+
+    /// Returns up to `limit` most recently cached photos, or empty array on fetch error.
     func load(limit: Int = 20) -> [PicsumPhoto] {
         var descriptor = FetchDescriptor<PicsumPhotoCache>(
             sortBy: [SortDescriptor(\.cachedAt, order: .reverse)]
@@ -73,7 +77,8 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
         
         return cached.map { $0.toPicsumPhoto() }
     }
-    
+
+    /// Returns whether a cached entry exists for the given photo id.
     func exists(id: String) -> Bool {
         var descriptor = FetchDescriptor<PicsumPhotoCache>(
             predicate: #Predicate<PicsumPhotoCache> { $0.id == id }
@@ -90,7 +95,8 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
         
         return count > 0
     }
-    
+
+    /// Removes cache entries older than TTL (e.g. 7 days).
     func clearOld() async {
         let cutoffDate = Date().addingTimeInterval(-cacheTTL)
         let descriptor = FetchDescriptor<PicsumPhotoCache>(
@@ -115,7 +121,8 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
             logger.error("Cache clearOld: save failed: \(error)")
         }
     }
-    
+
+    /// Deletes all cached entries (e.g. for logout or reset).
     func clearAll() {
         let descriptor = FetchDescriptor<PicsumPhotoCache>()
         

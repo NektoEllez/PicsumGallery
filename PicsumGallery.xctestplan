@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "1AEEF08A-8EB2-48D3-A456-98D3C1A898CD",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:PicsumGallery.xcodeproj",
+      "identifier" : "4493389A2F374B1D005795DC",
+      "name" : "PicsumGallery"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:PicsumGallery.xcodeproj",
+        "identifier" : "449338A92F374B1D005795DC",
+        "name" : "PicsumGalleryTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:PicsumGallery.xcodeproj",
+        "identifier" : "449338B32F374B1E005795DC",
+        "name" : "PicsumGalleryUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -25,6 +25,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(localized(.cancel)) {
+                        HapticManager.shared.lightImpact()
                         if hasUnsavedChanges {
                             showDiscardConfirmation = true
                         } else {
@@ -35,6 +36,7 @@ struct SettingsView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(localized(.done)) {
+                        HapticManager.shared.mediumImpact()
                         showSavedToastIfNeeded()
                         dismiss()
                     }
@@ -51,9 +53,11 @@ struct SettingsView: View {
                 titleVisibility: .visible
             ) {
                 Button(localized(.discard), role: .destructive) {
+                    HapticManager.shared.warning()
                     revertAndDismiss()
                 }
                 Button(localized(.keepEditing), role: .cancel) {
+                    HapticManager.shared.lightImpact()
                     showDiscardConfirmation = false
                 }
             } message: {

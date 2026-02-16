@@ -35,5 +35,11 @@ Pods/
 # Internal / local only (not for repo)
 memory-bank/
 REVIEW_SIMULATION.md
+transcript*.md
 .cursor/
 *.cursor/
+
+# Build artifacts & temp
+*.log
+*.orig
+*~

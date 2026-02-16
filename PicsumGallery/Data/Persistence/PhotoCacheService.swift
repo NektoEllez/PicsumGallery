@@ -1,5 +1,8 @@
 import Foundation
+import OSLog
 import SwiftData
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PicsumGallery", category: "PhotoCache")
 
 protocol PhotoCacheServiceProtocol {
     func save(_ photos: [PicsumPhoto])
@@ -27,19 +30,27 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
             )
             descriptor.fetchLimit = 1
 
-            if let existing = try? modelContext.fetch(descriptor).first {
-                existing.author = photo.author
-                existing.width = photo.width
-                existing.height = photo.height
-                existing.url = photo.url
-                existing.downloadUrl = photo.downloadUrl
-                existing.cachedAt = Date()
-            } else {
-                modelContext.insert(PicsumPhotoCache.from(photo))
+            do {
+                if let existing = try modelContext.fetch(descriptor).first {
+                    existing.author = photo.author
+                    existing.width = photo.width
+                    existing.height = photo.height
+                    existing.url = photo.url
+                    existing.downloadUrl = photo.downloadUrl
+                    existing.cachedAt = Date()
+                } else {
+                    modelContext.insert(PicsumPhotoCache.from(photo))
+                }
+            } catch {
+                logger.error("Cache save: fetch failed for id \(photo.id.value): \(error)")
             }
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            logger.error("Cache save: save failed: \(error)")
+        }
 
         Task {
             await clearOld()
@@ -52,7 +63,11 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
         )
         descriptor.fetchLimit = limit
         
-        guard let cached = try? modelContext.fetch(descriptor) else {
+        let cached: [PicsumPhotoCache]
+        do {
+            cached = try modelContext.fetch(descriptor)
+        } catch {
+            logger.error("Cache load: fetch failed: \(error)")
             return []
         }
         
@@ -65,7 +80,11 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
         )
         descriptor.fetchLimit = 1
         
-        guard let count = try? modelContext.fetchCount(descriptor) else {
+        let count: Int
+        do {
+            count = try modelContext.fetchCount(descriptor)
+        } catch {
+            logger.error("Cache exists: fetchCount failed: \(error)")
             return false
         }
         
@@ -78,28 +97,44 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
             predicate: #Predicate<PicsumPhotoCache> { $0.cachedAt < cutoffDate }
         )
         
-        guard let oldEntries = try? modelContext.fetch(descriptor) else {
+        let oldEntries: [PicsumPhotoCache]
+        do {
+            oldEntries = try modelContext.fetch(descriptor)
+        } catch {
+            logger.error("Cache clearOld: fetch failed: \(error)")
             return
         }
-        
+
         for entry in oldEntries {
             modelContext.delete(entry)
         }
-        
-        try? modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            logger.error("Cache clearOld: save failed: \(error)")
+        }
     }
     
     func clearAll() {
         let descriptor = FetchDescriptor<PicsumPhotoCache>()
         
-        guard let allEntries = try? modelContext.fetch(descriptor) else {
+        let allEntries: [PicsumPhotoCache]
+        do {
+            allEntries = try modelContext.fetch(descriptor)
+        } catch {
+            logger.error("Cache clearAll: fetch failed: \(error)")
             return
         }
-        
+
         for entry in allEntries {
             modelContext.delete(entry)
         }
-        
-        try? modelContext.save()
+
+        do {
+            try modelContext.save()
+        } catch {
+            logger.error("Cache clearAll: save failed: \(error)")
+        }
     }
 }

@@ -1,14 +1,16 @@
 import SwiftUI
 
 struct LoadMoreRowView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let title: String
     let isLoading: Bool
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            guard !isLoading else { return }
+            HapticManager.shared.mediumImpact()
+            action()
+        } label: {
             HStack {
                 if isLoading {
                     ProgressView()
@@ -25,34 +27,35 @@ struct LoadMoreRowView: View {
             .frame(minHeight: DesignTokens.Size.minimumTapTarget)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, DesignTokens.Spacing.xSmall)
+        .padding(.horizontal, DesignTokens.Spacing.large)
         .padding(.vertical, DesignTokens.Spacing.xSmall)
-        .glassStyleBackground(cornerRadius: DesignTokens.CornerRadius.card)
-        .background(
-            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.card, style: .continuous)
-                .fill(baseBackgroundColor)
-        )
+        .glassStyleBackground(cornerRadius: DesignTokens.CornerRadius.button)
+        .modifier(LoadMorePressAnimation(isLoading: isLoading))
         .disabled(isLoading)
         .opacity(isLoading ? DesignTokens.Opacity.disabledControl : 1)
         .accessibilityIdentifier("photos.loadMoreButton")
     }
+}
 
-    private var baseBackgroundColor: Color {
-        if colorScheme == .dark {
-            return .clear
-        }
-        return Color(
-            red: 236.0 / 255.0,
-            green: 234.0 / 255.0,
-            blue: 232.0 / 255.0
-        )
-    }
+private struct LoadMorePressAnimation: ViewModifier {
+    let isLoading: Bool
+    @State private var isPressed = false
 
-    private var borderColor: Color {
-        if colorScheme == .dark {
-            return .white.opacity(0.18)
-        }
-        return .black.opacity(0.08)
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPressed ? 0.985 : 1.0)
+            .opacity(isPressed ? 0.94 : 1.0)
+            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: isPressed)
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        guard !isLoading else { return }
+                        isPressed = true
+                    }
+                    .onEnded { _ in
+                        isPressed = false
+                    }
+            )
     }
 }
 

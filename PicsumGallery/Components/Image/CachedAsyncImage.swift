@@ -98,8 +98,10 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         await loadTask?.value
     }
     
+    /// Decodes image off main thread via Task (inherits cancellation from loadTask).
+    /// For thumbnail sizes, brief main-thread work is acceptable; for large images consider an actor.
     private func image(from data: Data, targetSize: CGSize?) async -> Image? {
-        await Task.detached {
+        await Task {
             guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
                 return nil
             }
@@ -123,7 +125,8 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             
             let uiImage = UIImage(cgImage: cgImage)
             return Image(uiImage: uiImage)
-        }.value
+        }
+        .value
     }
 }
 

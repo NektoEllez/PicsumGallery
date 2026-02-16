@@ -16,6 +16,7 @@ enum DesignTokens {
 
     enum CornerRadius {
         static let card: CGFloat = 12
+        static let button: CGFloat = 32
     }
 
     enum Border {
@@ -41,9 +42,9 @@ enum DesignTokens {
 
         static let loadMoreRow = EdgeInsets(
             top: Spacing.bottomSafeSpacing,
-            leading: Spacing.xSmall,
+            leading: Spacing.medium,
             bottom: Spacing.medium,
-            trailing: Spacing.xSmall
+            trailing: Spacing.medium
         )
     }
 }

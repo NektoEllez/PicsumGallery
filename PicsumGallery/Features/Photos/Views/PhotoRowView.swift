@@ -173,7 +173,9 @@ private extension PicsumPhoto {
     }
 
     static func makePreview(id: String, author: String, width: Int, height: Int) -> PicsumPhoto {
-        let url = URL(string: "https://picsum.photos/id/\(id)/\(width)/\(height)")!
+        guard let url = URL(string: "https://picsum.photos/id/\(id)/\(width)/\(height)") else {
+            fatalError("Preview: invalid URL for id=\(id) width=\(width) height=\(height)")
+        }
         return PicsumPhoto(
             id: PicsumPhotoID(value: id),
             author: author,

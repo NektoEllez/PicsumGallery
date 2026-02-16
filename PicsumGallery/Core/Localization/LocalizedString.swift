@@ -36,6 +36,12 @@ enum LocalizedString {
     case settingsSavedAppearance
     case settingsSavedLanguage
     case settingsSavedAppearanceAndLanguage
+    case moreActions
+    case share
+    case print
+    case preparingPrint
+    case printFailedTitle
+    case printUnavailable
 
     func localized(for languageCode: String) -> String {
         let translations: [LocalizedString: [String: String]] = [
@@ -73,7 +79,16 @@ enum LocalizedString {
             .square: ["en": "Square", "ru": "Квадрат"],
             .settingsSavedAppearance: ["en": "Appearance saved", "ru": "Тема сохранена"],
             .settingsSavedLanguage: ["en": "Language saved", "ru": "Язык сохранён"],
-            .settingsSavedAppearanceAndLanguage: ["en": "Appearance and language saved", "ru": "Тема и язык сохранены"]
+            .settingsSavedAppearanceAndLanguage: ["en": "Appearance and language saved", "ru": "Тема и язык сохранены"],
+            .moreActions: ["en": "More Actions", "ru": "Дополнительно"],
+            .share: ["en": "Share", "ru": "Поделиться"],
+            .print: ["en": "Print", "ru": "Печать"],
+            .preparingPrint: ["en": "Preparing Print...", "ru": "Подготовка печати..."],
+            .printFailedTitle: ["en": "Unable to Print", "ru": "Не удалось распечатать"],
+            .printUnavailable: [
+                "en": "Printing is unavailable for this image.",
+                "ru": "Печать недоступна для этого изображения."
+            ]
         ]
         return translations[self]?[languageCode] ?? translations[self]?["en"] ?? ""
     }

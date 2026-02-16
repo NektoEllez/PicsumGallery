@@ -27,6 +27,7 @@
 		4493389B2F374B1D005795DC /* PicsumGallery.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PicsumGallery.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		449338AA2F374B1D005795DC /* PicsumGalleryTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PicsumGalleryTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		449338B42F374B1E005795DC /* PicsumGalleryUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PicsumGalleryUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		44D4C14D2F43B29100514C3D /* PicsumGallery.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = PicsumGallery.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +76,7 @@
 		449338922F374B1D005795DC = {
 			isa = PBXGroup;
 			children = (
+				44D4C14D2F43B29100514C3D /* PicsumGallery.xctestplan */,
 				4493389D2F374B1D005795DC /* PicsumGallery */,
 				449338AD2F374B1D005795DC /* PicsumGalleryTests */,
 				449338B72F374B1E005795DC /* PicsumGalleryUITests */,

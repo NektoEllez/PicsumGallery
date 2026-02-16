@@ -17,7 +17,10 @@ struct ToastView: View {
             .contentShape(Rectangle())
             .accessibilityLabel(message.text)
             .accessibilityHint("Double tap to dismiss")
-            .onTapGesture { onDismiss() }
+            .onTapGesture {
+                HapticManager.shared.lightImpact()
+                onDismiss()
+            }
     }
 
     private var toastContent: some View {

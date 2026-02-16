@@ -109,7 +109,11 @@ final class PhotosViewModel {
         loadMoreTask?.cancel()
         
         loadMoreTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(throttleInterval))
+            do {
+                try await Task.sleep(for: .seconds(throttleInterval))
+            } catch {
+                return // Cancelled — expected when user scrolls away quickly
+            }
             guard !Task.isCancelled else { return }
             
             await performLoadMore(expectedGeneration: generation)

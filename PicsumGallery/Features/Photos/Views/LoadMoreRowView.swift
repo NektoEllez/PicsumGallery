@@ -27,13 +27,10 @@ struct LoadMoreRowView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, DesignTokens.Spacing.xSmall)
         .padding(.vertical, DesignTokens.Spacing.xSmall)
+        .glassStyleBackground(cornerRadius: DesignTokens.CornerRadius.card)
         .background(
             RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.card, style: .continuous)
                 .fill(baseBackgroundColor)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DesignTokens.CornerRadius.card, style: .continuous)
-                .stroke(borderColor, lineWidth: DesignTokens.Border.subtleLineWidth + 0.2)
         )
         .disabled(isLoading)
         .opacity(isLoading ? DesignTokens.Opacity.disabledControl : 1)

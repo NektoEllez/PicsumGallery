@@ -4,7 +4,7 @@ struct PhotoDetailView: View {
     let photo: PicsumPhoto
     @Environment(\.appSettings) private var appSettings
 
-    private var L: (LocalizedString) -> String {
+    private var localize: (LocalizedString) -> String {
         { $0.localized(for: appSettings.languageCode) }
     }
 
@@ -12,11 +12,13 @@ struct PhotoDetailView: View {
         ScrollView {
             VStack(spacing: 24) {
                 photoImage
+                    .glassStyleBackground(cornerRadius: 16)
                 photoMetadata
+                    .glassStyleBackground(cornerRadius: 16)
             }
             .padding()
         }
-        .navigationTitle(L(.photo))
+        .navigationTitle(localize(.photo))
         .navigationBarTitleDisplayMode(.inline)
     }
     
@@ -37,7 +39,7 @@ struct PhotoDetailView: View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.2)
-            Text(L(.loadingImage))
+            Text(localize(.loadingImage))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -51,12 +53,12 @@ struct PhotoDetailView: View {
     
     private var photoMetadata: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader(title: L(.information))
+            sectionHeader(title: localize(.information))
             
             VStack(spacing: 0) {
                 metadataRow(
                     icon: "person.fill",
-                    title: L(.author),
+                    title: localize(.author),
                     value: photo.author
                 )
                 
@@ -65,7 +67,7 @@ struct PhotoDetailView: View {
                 
                 metadataRow(
                     icon: "ruler",
-                    title: L(.dimensions),
+                    title: localize(.dimensions),
                     value: "\(photo.width) × \(photo.height) px"
                 )
                 
@@ -74,7 +76,7 @@ struct PhotoDetailView: View {
                 
                 metadataRow(
                     icon: "aspectratio",
-                    title: L(.aspectRatio),
+                    title: localize(.aspectRatio),
                     value: String(format: "%.2f", Double(photo.width) / Double(photo.height))
                 )
             }

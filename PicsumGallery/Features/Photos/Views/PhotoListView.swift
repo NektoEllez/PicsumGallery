@@ -4,8 +4,9 @@ struct PhotoListView: View {
     @State private var viewModel: PhotosViewModel
     @Environment(\.router) private var router
     @Environment(\.appSettings) private var appSettings
+    @Environment(\.colorScheme) private var colorScheme
 
-    private var L: (LocalizedString) -> String {
+    private var localized: (LocalizedString) -> String {
         { $0.localized(for: appSettings.languageCode) }
     }
 
@@ -15,7 +16,7 @@ struct PhotoListView: View {
 
     var body: some View {
         contentView
-            .navigationTitle(L(.photos))
+            .navigationTitle(localized(.photos))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -49,10 +50,10 @@ struct PhotoListView: View {
     }
     
     private var loadingView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: DesignTokens.Spacing.large) {
             ProgressView()
                 .scaleEffect(1.2)
-            Text(L(.loadingPhotos))
+            Text(localized(.loadingPhotos))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -60,17 +61,17 @@ struct PhotoListView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: DesignTokens.Spacing.large) {
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: 64))
                 .foregroundStyle(.tertiary)
             
-            VStack(spacing: 8) {
-                Text(L(.noPhotosYet))
+            VStack(spacing: DesignTokens.Spacing.xSmall) {
+                Text(localized(.noPhotosYet))
                     .font(.title2)
                     .fontWeight(.semibold)
                 
-                Text(L(.pullToRefresh))
+                Text(localized(.pullToRefresh))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -81,121 +82,59 @@ struct PhotoListView: View {
     }
     
     private var photoList: some View {
-        List {
-            Section {
-                ForEach(viewModel.photos, id: \.id) { photo in
-                    NavigationLink(value: Route.photoDetail(photo)) {
-                        photoRow(photo: photo)
+        ZStack {
+            List {
+                Section {
+                    ForEach(Array(viewModel.photos.enumerated()), id: \.element.id) { index, photo in
+                        let isLastPhoto = index == viewModel.photos.indices.last
+                        NavigationLink(value: Route.photoDetail(photo)) {
+                            PhotoRowView(
+                                photo: photo,
+                                landscapeTitle: localized(.landscape),
+                                portraitTitle: localized(.portrait),
+                                squareTitle: localized(.square)
+                            )
+                        }
+                        .listRowInsets(DesignTokens.Insets.photoRow)
+                        .listRowSeparator(
+                            (viewModel.hasMore && isLastPhoto) ? .hidden : .visible,
+                            edges: .bottom
+                        )
                     }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .onAppear {
-                        let isLastPhoto = photo.id == viewModel.photos.last?.id
-                        if isLastPhoto && viewModel.hasMore && !viewModel.isLoadingMore {
+
+                    if viewModel.hasMore {
+                        LoadMoreRowView(
+                            title: localized(.loadMore),
+                            isLoading: viewModel.isLoadingMore
+                        ) {
                             viewModel.loadMore()
                         }
+                        .listRowInsets(DesignTokens.Insets.loadMoreRow)
                     }
-                }
-                
-                if viewModel.hasMore {
-                    loadMoreButton
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                }
-            } header: {
-                Text("\(viewModel.photos.count) \(viewModel.photos.count == 1 ? L(.photoSingular) : L(.photoPlural))")
+                } header: {
+                    Text("\(viewModel.photos.count) " +
+                         (viewModel.photos.count == 1
+                          ? localized(.photoSingular)
+                          : localized(.photoPlural)))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .textCase(nil)
-            }
-        }
-        .listStyle(.insetGrouped)
-        .refreshable {
-            await viewModel.load()
-        }
-    }
-    
-    private var loadMoreButton: some View {
-        Button {
-            viewModel.loadMore()
-        } label: {
-            HStack {
-                if viewModel.isLoadingMore {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                } else {
-                    Text(L(.loadMore))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-        }
-        .disabled(viewModel.isLoadingMore)
-        .foregroundStyle(viewModel.isLoadingMore ? .secondary : .primary)
-        .accessibilityIdentifier("photos.loadMoreButton")
-    }
-    
-    private func photoRow(photo: PicsumPhoto) -> some View {
-        HStack(spacing: 16) {
-            photoThumbnail(photo: photo)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(photo.author)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                HStack(spacing: 12) {
-                    Label {
-                        Text("\(photo.width) × \(photo.height)")
-                            .font(.caption)
-                    } icon: {
-                        Image(systemName: "aspectratio")
-                            .font(.caption2)
-                    }
-                    .foregroundStyle(.secondary)
-                    
-                    if photo.width > photo.height {
-                        Label(L(.landscape), systemImage: "rectangle")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    } else if photo.height > photo.width {
-                        Label(L(.portrait), systemImage: "rectangle.portrait")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    } else {
-                        Label(L(.square), systemImage: "square")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
-            
-            Spacer()
-        }
-        .padding(.vertical, 8)
-    }
-    
-    private func photoThumbnail(photo: PicsumPhoto) -> some View {
-        CachedAsyncImage(
-            url: URL(string: photo.downloadUrl),
-            targetSize: CGSize(width: 80, height: 80)
-        ) { image in
-            image
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-        } placeholder: {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.secondary.opacity(0.1))
-                ProgressView()
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .refreshable {
+                await viewModel.load()
             }
         }
-        .frame(width: 80, height: 80)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.secondary.opacity(0.2), lineWidth: 0.5)
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var listBaseBackgroundColor: Color {
+        if colorScheme == .dark {
+            return .clear
+        }
+        return .white.opacity(DesignTokens.Opacity.cardLightBackground)
     }
 }
 
@@ -242,4 +181,8 @@ struct PhotoListView: View {
         PhotoListView(viewModel: viewModel)
             .environment(\.appSettings, AppSettings.shared)
     }
+}
+
+#Preview {
+    RouterView()
 }

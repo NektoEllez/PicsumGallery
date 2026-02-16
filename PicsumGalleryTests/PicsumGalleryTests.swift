@@ -45,9 +45,13 @@ struct PicsumGalleryTests {
 
         await vm.load()
         vm.loadMore()
-        try await Task.sleep(for: .seconds(0.7))
+        let expectedIDs = ["1", "2", "3"]
+        let timeout = ContinuousClock.now.advanced(by: .seconds(2))
+        while vm.photos.map(\.id.value) != expectedIDs && ContinuousClock.now < timeout {
+            try await Task.sleep(for: .milliseconds(50))
+        }
 
-        #expect(vm.photos.map(\.id.value) == ["1", "2", "3"])
+        #expect(vm.photos.map(\.id.value) == expectedIDs)
     }
 
     @Test func apiServiceErrorFromUnknownUsesMessage() {

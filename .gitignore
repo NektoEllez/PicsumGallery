@@ -32,12 +32,13 @@ Pods/
 # Optional: personal schemes (shared ones live in xcshareddata)
 # xcuserdata/*/xcschemes/*.xcscheme
 
-# Internal / local only (not for repo)
+# Local / development (not for repo)
 memory-bank/
 REVIEW_SIMULATION.md
 transcript*.md
 .cursor/
 *.cursor/
+.cursorrules
 
 # Build artifacts & temp
 *.log

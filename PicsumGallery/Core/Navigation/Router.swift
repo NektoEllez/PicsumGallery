@@ -5,14 +5,10 @@ enum Route: Hashable {
     case photoList
     case photoDetail(PicsumPhoto)
     case settings
-}
-
-@Observable
+}@Observable
 @MainActor
 final class Router {
-    var path = NavigationPath()
-
-    func navigate(to route: Route) {
+    var path = NavigationPath()    func navigate(to route: Route) {
         HapticManager.shared.lightImpact()
         path.append(route)
     }

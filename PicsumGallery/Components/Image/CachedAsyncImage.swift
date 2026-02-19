@@ -95,12 +95,12 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         }
     }
 
-    /// Декодирует изображение вне главного потока.
+    /// Decodes image off the main thread.
     ///
-    /// Используем `nonisolated async` вместо `Task.detached` потому что:
-    /// - Swift автоматически выполняет функцию в cooperative thread pool (не блокирует MainActor)
-    /// - Отмена родительской задачи (.task modifier) распространяется сюда автоматически
-    /// - Не нужно вручную делать `Task.detached { }.value` — проще и безопаснее
+    /// Uses `nonisolated async` instead of `Task.detached` because:
+    /// - Swift automatically executes the function in cooperative thread pool (doesn't block MainActor)
+    /// - Cancellation from parent task (.task modifier) propagates here automatically
+    /// - No need to manually do `Task.detached { }.value` — simpler and safer
     nonisolated private func decodeImage(from data: Data, targetSize: CGSize?, scale: CGFloat) async -> Image? {
         guard !Task.isCancelled else { return nil }
 

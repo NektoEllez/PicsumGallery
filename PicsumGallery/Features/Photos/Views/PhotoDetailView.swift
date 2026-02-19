@@ -3,7 +3,6 @@ import SwiftUI
 struct PhotoDetailView: View {
     let photo: PicsumPhoto
     @Environment(\.appSettings) private var appSettings
-    @State private var isPreparingPrint = false
     @State private var printErrorMessage = ""
     @State private var isShowingPrintError = false
 
@@ -85,13 +84,8 @@ struct PhotoDetailView: View {
                         await printPhoto()
                     }
                 } label: {
-                    if isPreparingPrint {
-                        Label(localize(.preparingPrint), systemImage: "printer")
-                    } else {
-                        Label(localize(.print), systemImage: "printer")
-                    }
+                    Label(localize(.print), systemImage: "printer")
                 }
-                .disabled(isPreparingPrint)
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .imageScale(.large)
@@ -106,11 +100,6 @@ struct PhotoDetailView: View {
 
     @MainActor
     private func printPhoto() async {
-        guard !isPreparingPrint else { return }
-
-        isPreparingPrint = true
-        defer { isPreparingPrint = false }
-
         do {
             let request = URLRequest(url: shareURL)
             let data: Data

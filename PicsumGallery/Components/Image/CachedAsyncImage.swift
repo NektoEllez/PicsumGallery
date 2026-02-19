@@ -6,11 +6,14 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
     let targetSize: CGSize?
     @ViewBuilder let content: (Image) -> Content
     @ViewBuilder let placeholder: () -> Placeholder
-    
+
     @State private var phase: AsyncImagePhase = .empty
     @State private var loadedURL: String?
-    @State private var loadTask: Task<Void, Never>?
-    
+
+    // Берём реальный масштаб экрана из окружения — правильно работает
+    // на @2x (iPhone SE, 8) и @3x (iPhone 14 Pro и выше).
+    @Environment(\.displayScale) private var displayScale
+
     init(
         url: URL?,
         targetSize: CGSize? = nil,
@@ -22,7 +25,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         self.content = content
         self.placeholder = placeholder
     }
-    
+
     var body: some View {
         Group {
             switch phase {
@@ -37,10 +40,8 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 placeholder()
             }
         }
-        .onDisappear {
-            loadTask?.cancel()
-            loadTask = nil
-        }
+        // .task(id:) сам отменяет задачу при исчезновении вью или смене id —
+        // отдельный onDisappear для отмены больше не нужен.
         .task(id: url?.absoluteString) {
             await reloadForCurrentURL()
         }
@@ -55,88 +56,88 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         phase = .empty
         await loadImage()
     }
-    
+
     @MainActor
     private func loadImage() async {
-        guard let url = url else {
+        guard let url else {
             phase = .failure(URLError(.badURL))
             return
         }
-        
-        loadTask?.cancel()
-        
-        loadTask = Task { @MainActor in
-            let request = URLRequest(url: url)
-            if let cachedResponse = URLCache.shared.cachedResponse(for: request) {
-                if !Task.isCancelled,
-                   let image = await image(from: cachedResponse.data, targetSize: targetSize) {
-                    phase = .success(image)
-                    loadedURL = url.absoluteString
-                    return
-                }
+
+        let request = URLRequest(url: url)
+
+        // Сначала проверяем кэш — избегаем лишнего сетевого запроса.
+        if let cachedResponse = URLCache.shared.cachedResponse(for: request) {
+            if let image = await decodeImage(from: cachedResponse.data, targetSize: targetSize, scale: displayScale) {
+                guard !Task.isCancelled else { return }
+                phase = .success(image)
+                loadedURL = url.absoluteString
+                return
             }
-            
+        }
+
+        guard !Task.isCancelled else { return }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
             guard !Task.isCancelled else { return }
-            
-            do {
-                let (data, response) = try await URLSession.shared.data(from: url)
-                
-                guard !Task.isCancelled else { return }
-                
-                let cachedResponse = CachedURLResponse(response: response, data: data)
-                URLCache.shared.storeCachedResponse(cachedResponse, for: request)
-                
-                guard !Task.isCancelled else { return }
-                
-                if let image = await image(from: data, targetSize: targetSize) {
-                    guard !Task.isCancelled else { return }
-                    phase = .success(image)
-                    loadedURL = url.absoluteString
-                } else {
-                    phase = .failure(URLError(.badServerResponse))
-                }
-            } catch {
-                if !Task.isCancelled {
-                    phase = .failure(error)
-                }
-            }
-        }
-        
-        await loadTask?.value
-    }
-    
-    /// Decodes image off the main thread so CGImage work doesn't block UI.
-    private func image(from data: Data, targetSize: CGSize?) async -> Image? {
-        await Task.detached(priority: .userInitiated) {
-            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
-                return nil
-            }
 
-            let options: [CFString: Any]
-            let validTargetSize: CGSize? = {
-                guard let size = targetSize, size.width > 0, size.height > 0 else { return nil }
-                return size
-            }()
-            if let targetSize = validTargetSize {
-                let maxDimension = max(targetSize.width, targetSize.height) * 2
-                options = [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceThumbnailMaxPixelSize: maxDimension,
-                    kCGImageSourceCreateThumbnailWithTransform: true
-                ]
+            URLCache.shared.storeCachedResponse(
+                CachedURLResponse(response: response, data: data),
+                for: request
+            )
+
+            if let image = await decodeImage(from: data, targetSize: targetSize, scale: displayScale) {
+                guard !Task.isCancelled else { return }
+                phase = .success(image)
+                loadedURL = url.absoluteString
             } else {
-                options = [:]
+                phase = .failure(URLError(.badServerResponse))
             }
-
-            guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) ??
-                               CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-                return nil
-            }
-
-            let uiImage = UIImage(cgImage: cgImage)
-            return Image(uiImage: uiImage)
+        } catch {
+            guard !Task.isCancelled else { return }
+            phase = .failure(error)
         }
-        .value
+    }
+
+    /// Декодирует изображение вне главного потока.
+    ///
+    /// Используем `nonisolated async` вместо `Task.detached` потому что:
+    /// - Swift автоматически выполняет функцию в cooperative thread pool (не блокирует MainActor)
+    /// - Отмена родительской задачи (.task modifier) распространяется сюда автоматически
+    /// - Не нужно вручную делать `Task.detached { }.value` — проще и безопаснее
+    nonisolated private func decodeImage(from data: Data, targetSize: CGSize?, scale: CGFloat) async -> Image? {
+        guard !Task.isCancelled else { return nil }
+
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return nil
+        }
+
+        let options: [CFString: Any]
+        let validTargetSize: CGSize? = {
+            guard let size = targetSize, size.width > 0, size.height > 0 else { return nil }
+            return size
+        }()
+
+        if let targetSize = validTargetSize {
+            // Умножаем на реальный scale (@2x / @3x), переданный из @Environment.
+            // Раньше было захардкожено * 2 — на iPhone Pro (@3x) thumbnails были чуть мыльные.
+            let maxDimension = max(targetSize.width, targetSize.height) * scale
+            options = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxDimension,
+                kCGImageSourceCreateThumbnailWithTransform: true
+            ]
+        } else {
+            options = [:]
+        }
+
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+                         ?? CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            return nil
+        }
+
+        return Image(uiImage: UIImage(cgImage: cgImage))
     }
 }
 

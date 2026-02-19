@@ -30,9 +30,7 @@ final class ToastStore {
                 if !Task.isCancelled {
                     dismiss()
                 }
-            } catch {
-                // Task cancelled
-            }
+            } catch { }
         }
     }
 

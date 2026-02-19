@@ -10,8 +10,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
     @State private var phase: AsyncImagePhase = .empty
     @State private var loadedURL: String?
 
-    // Берём реальный масштаб экрана из окружения — правильно работает
-    // на @2x (iPhone SE, 8) и @3x (iPhone 14 Pro и выше).
     @Environment(\.displayScale) private var displayScale
 
     init(
@@ -40,8 +38,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 placeholder()
             }
         }
-        // .task(id:) сам отменяет задачу при исчезновении вью или смене id —
-        // отдельный onDisappear для отмены больше не нужен.
         .task(id: url?.absoluteString) {
             await reloadForCurrentURL()
         }
@@ -66,7 +62,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
 
         let request = URLRequest(url: url)
 
-        // Сначала проверяем кэш — избегаем лишнего сетевого запроса.
         if let cachedResponse = URLCache.shared.cachedResponse(for: request) {
             if let image = await decodeImage(from: cachedResponse.data, targetSize: targetSize, scale: displayScale) {
                 guard !Task.isCancelled else { return }
@@ -100,12 +95,12 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         }
     }
 
-    /// Декодирует изображение вне главного потока.
+    /// Decodes image off the main thread.
     ///
-    /// Используем `nonisolated async` вместо `Task.detached` потому что:
-    /// - Swift автоматически выполняет функцию в cooperative thread pool (не блокирует MainActor)
-    /// - Отмена родительской задачи (.task modifier) распространяется сюда автоматически
-    /// - Не нужно вручную делать `Task.detached { }.value` — проще и безопаснее
+    /// Uses `nonisolated async` instead of `Task.detached` because:
+    /// - Swift automatically executes the function in cooperative thread pool (doesn't block MainActor)
+    /// - Cancellation from parent task (.task modifier) propagates here automatically
+    /// - No need to manually do `Task.detached { }.value` — simpler and safer
     nonisolated private func decodeImage(from data: Data, targetSize: CGSize?, scale: CGFloat) async -> Image? {
         guard !Task.isCancelled else { return nil }
 
@@ -120,8 +115,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         }()
 
         if let targetSize = validTargetSize {
-            // Умножаем на реальный scale (@2x / @3x), переданный из @Environment.
-            // Раньше было захардкожено * 2 — на iPhone Pro (@3x) thumbnails были чуть мыльные.
             let maxDimension = max(targetSize.width, targetSize.height) * scale
             options = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,

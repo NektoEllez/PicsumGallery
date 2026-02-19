@@ -1,10 +1,3 @@
-//
-//  PicsumGalleryTests.swift
-//  PicsumGalleryTests
-//
-//  Created by Nekto_Ellez on 07.02.2026.
-//
-
 import Foundation
 import Testing
 @testable import PicsumGallery

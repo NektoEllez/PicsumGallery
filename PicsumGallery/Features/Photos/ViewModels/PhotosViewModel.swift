@@ -100,9 +100,7 @@ final class PhotosViewModel {
                     style: .success
                 )
                 toastStore?.show(message, autoDismissAfter: 2)
-            } catch {
-                // Task cancelled
-            }
+            } catch { }
         }
     }
 
@@ -115,7 +113,7 @@ final class PhotosViewModel {
             do {
                 try await Task.sleep(for: .seconds(throttleInterval))
             } catch {
-                return // Cancelled — expected when user scrolls away quickly
+                return
             }
             guard !Task.isCancelled else { return }
             

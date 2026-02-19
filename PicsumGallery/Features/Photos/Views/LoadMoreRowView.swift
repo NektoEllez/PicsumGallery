@@ -26,36 +26,25 @@ struct LoadMoreRowView: View {
             .frame(maxWidth: .infinity)
             .frame(minHeight: DesignTokens.Size.minimumTapTarget)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(LoadMorePressButtonStyle(isLoading: isLoading))
         .padding(.horizontal, DesignTokens.Spacing.large)
         .padding(.vertical, DesignTokens.Spacing.xSmall)
         .glassStyleBackground(cornerRadius: DesignTokens.CornerRadius.button)
-        .modifier(LoadMorePressAnimation(isLoading: isLoading))
         .disabled(isLoading)
         .opacity(isLoading ? DesignTokens.Opacity.disabledControl : 1)
         .accessibilityIdentifier("photos.loadMoreButton")
     }
 }
 
-private struct LoadMorePressAnimation: ViewModifier {
+private struct LoadMorePressButtonStyle: ButtonStyle {
     let isLoading: Bool
-    @State private var isPressed = false
 
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPressed ? 0.985 : 1.0)
-            .opacity(isPressed ? 0.94 : 1.0)
-            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: isPressed)
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        guard !isLoading else { return }
-                        isPressed = true
-                    }
-                    .onEnded { _ in
-                        isPressed = false
-                    }
-            )
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed && !isLoading
+        return configuration.label
+            .scaleEffect(pressed ? 0.985 : 1.0)
+            .opacity(pressed ? 0.94 : 1.0)
+            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: pressed)
     }
 }
 

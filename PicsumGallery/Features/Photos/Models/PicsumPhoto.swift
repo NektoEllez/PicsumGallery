@@ -24,7 +24,7 @@ struct PicsumPhoto: Codable, Identifiable, Equatable, Hashable, Sendable {
     let width: Int
     let height: Int
     let url: URL
-    let downloadUrl: String
+    let downloadUrl: URL
 
     enum CodingKeys: String, CodingKey {
         case id, author, width, height, url

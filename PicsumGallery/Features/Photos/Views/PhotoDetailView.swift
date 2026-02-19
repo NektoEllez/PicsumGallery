@@ -37,7 +37,7 @@ struct PhotoDetailView: View {
     }
     
     private var photoImage: some View {
-        CachedAsyncImage(url: URL(string: photo.downloadUrl)) { image in
+        CachedAsyncImage(url: photo.downloadUrl) { image in
             image
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -70,18 +70,14 @@ struct PhotoDetailView: View {
     private var toolbarActions: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                if let shareURL {
-                    ShareLink(item: shareURL) {
-                        Label(localize(.share), systemImage: "square.and.arrow.up")
-                    }
-                    .simultaneousGesture(
-                        TapGesture().onEnded {
-                            HapticManager.shared.lightImpact()
-                        }
-                    )
-                } else {
+                ShareLink(item: shareURL) {
                     Label(localize(.share), systemImage: "square.and.arrow.up")
                 }
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        HapticManager.shared.lightImpact()
+                    }
+                )
 
                 Button {
                     HapticManager.shared.mediumImpact()
@@ -95,7 +91,7 @@ struct PhotoDetailView: View {
                         Label(localize(.print), systemImage: "printer")
                     }
                 }
-                .disabled(isPreparingPrint || shareURL == nil)
+                .disabled(isPreparingPrint)
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .imageScale(.large)
@@ -104,23 +100,26 @@ struct PhotoDetailView: View {
         }
     }
 
-    private var shareURL: URL? {
-        URL(string: photo.downloadUrl) ?? photo.url
+    private var shareURL: URL {
+        photo.downloadUrl
     }
 
     @MainActor
     private func printPhoto() async {
         guard !isPreparingPrint else { return }
-        guard let shareURL else {
-            presentPrintError(localize(.printUnavailable))
-            return
-        }
 
         isPreparingPrint = true
         defer { isPreparingPrint = false }
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: shareURL)
+            let request = URLRequest(url: shareURL)
+            let data: Data
+            if let cached = URLCache.shared.cachedResponse(for: request) {
+                data = cached.data
+            } else {
+                let (downloaded, _) = try await URLSession.shared.data(from: shareURL)
+                data = downloaded
+            }
             guard let image = UIImage(data: data) else {
                 presentPrintError(localize(.printUnavailable))
                 return
@@ -183,19 +182,20 @@ struct PhotoDetailView: View {
 }
 
 #Preview {
-    guard let url = URL(string: "https://picsum.photos/id/1/1920/1080") else {
-        return Text(LocalizedString.invalidUrl.localized(for: "en"))
-    }
-    let mockPhoto = PicsumPhoto(
-        id: PicsumPhotoID(value: "1"),
-        author: "John Doe",
-        width: 1920,
-        height: 1080,
-        url: url,
-        downloadUrl: "https://picsum.photos/id/1/1920/1080"
-    )
-    return NavigationStack {
-        PhotoDetailView(photo: mockPhoto)
-            .environment(\.appSettings, AppSettings.shared)
+    if let url = URL(string: "https://picsum.photos/id/1/1920/1080") {
+        let mockPhoto = PicsumPhoto(
+            id: PicsumPhotoID(value: "1"),
+            author: "John Doe",
+            width: 1920,
+            height: 1080,
+            url: url,
+            downloadUrl: url
+        )
+        NavigationStack {
+            PhotoDetailView(photo: mockPhoto)
+                .environment(\.appSettings, AppSettings.shared)
+        }
+    } else {
+        Text(LocalizedString.invalidUrl.localized(for: "en"))
     }
 }

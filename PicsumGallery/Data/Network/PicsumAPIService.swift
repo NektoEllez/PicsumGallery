@@ -1,22 +1,24 @@
 import Foundation
 
-protocol PicsumAPIServiceProtocol {
+protocol PicsumAPIServiceProtocol: Sendable {
     func fetchPhotos(page: Int, limit: Int) async throws -> [PicsumPhoto]
 }
 
-final class PicsumAPIService: PicsumAPIServiceProtocol {
+final class PicsumAPIService: PicsumAPIServiceProtocol, Sendable {
     private let baseURL = "https://picsum.photos/v2/list"
     private let maxResponseSize: Int64 = 10 * 1024 * 1024 // 10 MB
     private let decoder = JSONDecoder()
-    private lazy var session: URLSession = {
+    private let session: URLSession
+
+    init() {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30.0
         configuration.timeoutIntervalForResource = 60.0
         configuration.requestCachePolicy = .useProtocolCachePolicy
         configuration.urlCache = URLCache(memoryCapacity: 4 * 1024 * 1024,
                                           diskCapacity: 20 * 1024 * 1024)
-        return URLSession(configuration: configuration)
-    }()
+        self.session = URLSession(configuration: configuration)
+    }
 
     func fetchPhotos(page: Int = 1, limit: Int = 20) async throws -> [PicsumPhoto] {
         guard var components = URLComponents(string: baseURL) else {

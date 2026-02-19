@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct PhotoRowView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let photo: PicsumPhoto
     let landscapeTitle: String
     let portraitTitle: String
@@ -70,7 +68,7 @@ struct PhotoRowView: View {
 
     private var photoThumbnail: some View {
         CachedAsyncImage(
-            url: URL(string: photo.downloadUrl),
+            url: photo.downloadUrl,
             targetSize: CGSize(
                 width: DesignTokens.Size.thumbnailSide,
                 height: DesignTokens.Size.thumbnailSide
@@ -104,19 +102,6 @@ struct PhotoRowView: View {
         }
     }
 
-    private var cardBaseBackground: Color {
-        if colorScheme == .dark {
-            return .clear
-        }
-        return .white.opacity(DesignTokens.Opacity.cardLightBackground)
-    }
-
-    private var cardBorderColor: Color {
-        if colorScheme == .dark {
-            return .white.opacity(DesignTokens.Opacity.cardDarkBorder)
-        }
-        return .black.opacity(DesignTokens.Opacity.cardLightBorder)
-    }
 }
 
 #Preview("Landscape") {
@@ -173,7 +158,8 @@ private extension PicsumPhoto {
     }
 
     static func makePreview(id: String, author: String, width: Int, height: Int) -> PicsumPhoto {
-        guard let url = URL(string: "https://picsum.photos/id/\(id)/\(width)/\(height)") else {
+        guard let url = URL(string: "https://picsum.photos/id/\(id)/\(width)/\(height)"),
+              let downloadUrl = URL(string: "https://picsum.photos/id/\(id)/200/200") else {
             fatalError("Preview: invalid URL for id=\(id) width=\(width) height=\(height)")
         }
         return PicsumPhoto(
@@ -182,7 +168,7 @@ private extension PicsumPhoto {
             width: width,
             height: height,
             url: url,
-            downloadUrl: "https://picsum.photos/id/\(id)/200/200"
+            downloadUrl: downloadUrl
         )
     }
 }

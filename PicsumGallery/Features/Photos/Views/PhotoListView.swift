@@ -4,7 +4,6 @@ struct PhotoListView: View {
     @State private var viewModel: PhotosViewModel
     @Environment(\.router) private var router
     @Environment(\.appSettings) private var appSettings
-    @Environment(\.colorScheme) private var colorScheme
 
     private var localized: (LocalizedString) -> String {
         { $0.localized(for: appSettings.languageCode) }
@@ -82,60 +81,52 @@ struct PhotoListView: View {
     }
     
     private var photoList: some View {
-        ZStack {
-            List {
-                Section {
-                    ForEach(Array(viewModel.photos.enumerated()), id: \.element.id) { index, photo in
-                        let isLastPhoto = index == viewModel.photos.indices.last
-                        NavigationLink(value: Route.photoDetail(photo)) {
-                            PhotoRowView(
-                                photo: photo,
-                                landscapeTitle: localized(.landscape),
-                                portraitTitle: localized(.portrait),
-                                squareTitle: localized(.square)
-                            )
-                        }
-                        .listRowInsets(DesignTokens.Insets.photoRow)
-                        .listRowSeparator(
-                            (viewModel.hasMore && isLastPhoto) ? .hidden : .visible,
-                            edges: .bottom
+        List {
+            Section {
+                ForEach(viewModel.photos) { photo in
+                    let isLastPhoto = photo.id == viewModel.photos.last?.id
+                    NavigationLink(value: Route.photoDetail(photo)) {
+                        PhotoRowView(
+                            photo: photo,
+                            landscapeTitle: localized(.landscape),
+                            portraitTitle: localized(.portrait),
+                            squareTitle: localized(.square)
                         )
                     }
-
-                    if viewModel.hasMore {
-                        LoadMoreRowView(
-                            title: localized(.loadMore),
-                            isLoading: viewModel.isLoadingMore
-                        ) {
-                            viewModel.loadMore()
-                        }
-                        .listRowInsets(DesignTokens.Insets.loadMoreRow)
-                    }
-                } header: {
-                    Text("\(viewModel.photos.count) " +
-                         (viewModel.photos.count == 1
-                          ? localized(.photoSingular)
-                          : localized(.photoPlural)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .textCase(nil)
+                    .listRowInsets(DesignTokens.Insets.photoRow)
+                    .listRowSeparator(
+                        (viewModel.hasMore && isLastPhoto) ? .hidden : .visible,
+                        edges: .bottom
+                    )
                 }
+
+                if viewModel.hasMore {
+                    LoadMoreRowView(
+                        title: localized(.loadMore),
+                        isLoading: viewModel.isLoadingMore
+                    ) {
+                        viewModel.loadMore()
+                    }
+                    .listRowInsets(DesignTokens.Insets.loadMoreRow)
+                }
+            } header: {
+                Text("\(viewModel.photos.count) " +
+                     (viewModel.photos.count == 1
+                      ? localized(.photoSingular)
+                      : localized(.photoPlural)))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textCase(nil)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .refreshable {
-                await viewModel.load()
-            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .refreshable {
+            await viewModel.load()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private var listBaseBackgroundColor: Color {
-        if colorScheme == .dark {
-            return .clear
-        }
-        return .white.opacity(DesignTokens.Opacity.cardLightBackground)
-    }
 }
 
 #Preview("With Photos") {

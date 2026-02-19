@@ -26,26 +26,33 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
 
     /// Upserts photos into the cache (update existing by id, insert new) and triggers cleanup of old entries.
     func save(_ photos: [PicsumPhoto]) {
-        for photo in photos {
-            let id = photo.id.value
-            var descriptor = FetchDescriptor<PicsumPhotoCache>(
-                predicate: #Predicate<PicsumPhotoCache> { $0.id == id }
-            )
-            descriptor.fetchLimit = 1
+        guard !photos.isEmpty else { return }
 
-            do {
-                if let existing = try modelContext.fetch(descriptor).first {
-                    existing.author = photo.author
-                    existing.width = photo.width
-                    existing.height = photo.height
-                    existing.url = photo.url
-                    existing.downloadUrl = photo.downloadUrl
-                    existing.cachedAt = Date()
-                } else {
-                    modelContext.insert(PicsumPhotoCache.from(photo))
-                }
-            } catch {
-                logger.error("Cache save: fetch failed for id \(photo.id.value): \(error)")
+        let ids = photos.map(\.id.value)
+        let descriptor = FetchDescriptor<PicsumPhotoCache>(
+            predicate: #Predicate<PicsumPhotoCache> { ids.contains($0.id) }
+        )
+
+        let existingById: [String: PicsumPhotoCache]
+        do {
+            let existing = try modelContext.fetch(descriptor)
+            existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        } catch {
+            logger.error("Cache save: batch fetch failed: \(error)")
+            existingById = [:]
+        }
+
+        let now = Date()
+        for photo in photos {
+            if let existing = existingById[photo.id.value] {
+                existing.author = photo.author
+                existing.width = photo.width
+                existing.height = photo.height
+                existing.url = photo.url
+                existing.downloadUrl = photo.downloadUrl.absoluteString
+                existing.cachedAt = now
+            } else {
+                modelContext.insert(PicsumPhotoCache.from(photo))
             }
         }
 
@@ -124,24 +131,11 @@ final class PhotoCacheService: PhotoCacheServiceProtocol {
 
     /// Deletes all cached entries (e.g. for logout or reset).
     func clearAll() {
-        let descriptor = FetchDescriptor<PicsumPhotoCache>()
-        
-        let allEntries: [PicsumPhotoCache]
         do {
-            allEntries = try modelContext.fetch(descriptor)
-        } catch {
-            logger.error("Cache clearAll: fetch failed: \(error)")
-            return
-        }
-
-        for entry in allEntries {
-            modelContext.delete(entry)
-        }
-
-        do {
+            try modelContext.delete(model: PicsumPhotoCache.self)
             try modelContext.save()
         } catch {
-            logger.error("Cache clearAll: save failed: \(error)")
+            logger.error("Cache clearAll: delete failed: \(error)")
         }
     }
 }

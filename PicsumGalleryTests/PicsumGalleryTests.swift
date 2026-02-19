@@ -78,7 +78,7 @@ private func makePhoto(id: Int) -> PicsumPhoto {
         width: 200,
         height: 200,
         url: url,
-        downloadUrl: url.absoluteString
+        downloadUrl: url
     )
 }
 

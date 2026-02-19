@@ -51,7 +51,10 @@ enum LocalizedString {
             .discard: ["en": "Discard", "ru": "Сбросить"],
             .discardSettings: ["en": "Discard settings?", "ru": "Сбросить настройки?"],
             .keepEditing: ["en": "Keep Editing", "ru": "Продолжить"],
-            .discardMessage: ["en": "Your changes to appearance and language will not be saved.", "ru": "Изменения темы и языка не будут сохранены."],
+            .discardMessage: [
+                "en": "Your changes to appearance and language will not be saved.",
+                "ru": "Изменения темы и языка не будут сохранены."
+            ],
             .appearance: ["en": "Appearance", "ru": "Внешний вид"],
             .system: ["en": "System", "ru": "Системная"],
             .light: ["en": "Light", "ru": "Светлая"],

@@ -30,13 +30,14 @@ final class PicsumPhotoCache {
     }
     
     func toPicsumPhoto() -> PicsumPhoto {
-        PicsumPhoto(
+        let resolvedDownloadURL = URL(string: downloadUrl) ?? url
+        return PicsumPhoto(
             id: PicsumPhotoID(value: id),
             author: author,
             width: width,
             height: height,
             url: url,
-            downloadUrl: downloadUrl
+            downloadUrl: resolvedDownloadURL
         )
     }
     
@@ -47,7 +48,7 @@ final class PicsumPhotoCache {
             width: photo.width,
             height: photo.height,
             url: photo.url,
-            downloadUrl: photo.downloadUrl
+            downloadUrl: photo.downloadUrl.absoluteString
         )
     }
 }

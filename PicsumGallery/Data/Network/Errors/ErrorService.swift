@@ -35,18 +35,15 @@ final class ErrorService {
     /// Toast store for showing non-blocking error messages.
     var toastStore: ToastStore?
 
-    /// Handles error and returns user-friendly message.
+    /// Handles error: logs, sets current error, shows toast.
     ///
     /// - Parameter error: Error to handle
-    /// - Returns: User-friendly error message
+    @discardableResult
     func handle(_ error: Error) -> String {
-        let apiError = mapToAPIServiceError(error)
+        let apiError = APIServiceError.from(error)
         currentError = apiError
         log(apiError, level: .error)
-        
-        // Show toast notification instead of blocking alert
         showErrorToast(apiError)
-        
         return apiError.localizedDescription
     }
     
@@ -62,18 +59,13 @@ final class ErrorService {
         toastStore?.show(message, autoDismissAfter: 4)
     }
 
-    /// Converts any error to APIServiceError.
-    private func mapToAPIServiceError(_ error: Error) -> APIServiceError {
-        APIServiceError.from(error)
-    }
-
     /// Logs error without saving to currentError.
     ///
     /// - Parameters:
     ///   - error: Error to log
     ///   - level: Logging level (default .debug)
     func logOnly(_ error: Error, level: OSLogType = .debug) {
-        let apiError = mapToAPIServiceError(error)
+        let apiError = APIServiceError.from(error)
         log(apiError, level: level)
     }
 

@@ -72,10 +72,10 @@ final class PhotosViewModel {
         } catch {
             guard generation == loadGeneration else { return }
             if photos.isEmpty {
-                _ = errorService.handle(error)
+                errorService.handle(error)
                 self.error = APIServiceError.from(error)
             } else {
-                _ = errorService.handle(error)
+                errorService.handle(error)
             }
         }
     }
@@ -144,7 +144,7 @@ final class PhotosViewModel {
             error = nil
         } catch {
             guard expectedGeneration == loadGeneration else { return }
-            _ = errorService.handle(error)
+            errorService.handle(error)
             self.error = APIServiceError.from(error)
             currentPage -= 1
         }
